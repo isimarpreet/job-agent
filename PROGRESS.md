@@ -2,8 +2,9 @@
 
 To resume in a new session, say: "read PROGRESS.md and continue".
 
-Rules for this project: uses the Claude Agent SDK with your Claude Code login (never an API key).
-It never submits applications and never scrapes LinkedIn/Naukri. You review and submit yourself.
+Rules changed on 2026-11-10: the user replaced the original "never submit, never use LinkedIn/Naukri"
+rules, and accepted the account risk. See "Stage 8". Still true: use the Claude Code login (never an API
+key), never invent resume content, never bypass CAPTCHAs.
 
 Review each stage with `git log --reverse` and `git show <hash>`. Each commit is one stage.
 
@@ -197,6 +198,19 @@ Try it once by hand first, since a cron job may not reach your Claude Code login
 1. Fetching is free, and limiting it would return the same first N jobs every time. Scoring is what uses quota.
 2. The boards are fixed in config, so there's no decision to make. Plain code is cheaper and predictable.
 </details>
+
+## Stage 8: `/todays-work` browser agent (built, NOT yet tested in Chrome)
+
+**What the user wants.** Type one command in Claude. It finds 25 to 30 jobs from the resume across
+LinkedIn, Naukri, Indeed and company boards, India and worldwide. The user picks from the list. It then
+applies to only those, with a tailored resume each. It fills long forms too, and at a CAPTCHA it leaves the
+filled form open for the user to solve and submit.
+
+**Files.** `.claude/skills/todays-work/SKILL.md` is the command, `applicant_profile.md` holds form answers
+(git-ignored), and `resume_pdf.py` makes the upload PDF. Output goes to `shortlists/` and `tailored/`.
+
+**Depends on.** Claude in Chrome connected with `/chrome`. It runs in the user's own Chrome, so the Mac
+must be on. Daily scheduling is not set up yet.
 
 ## Current state and what's next
 
