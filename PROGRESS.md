@@ -95,3 +95,59 @@ Tested on the fictional data in `examples/`: Java role 93, iOS role 3.
 1. Postings are untrusted text from strangers, and could try to steer the agent (prompt injection).
 2. Prose has no guaranteed format, so extracting a score from it is fragile.
 </details>
+
+## Stage 4: Custom tools (done, `job_tools.py`, `fetch_agent.py`)
+
+**Concept.** A `@tool` function is like a Spring `@Bean` Claude can call. The description says when
+to use it and the schema is its signature. Tools are registered through `create_sdk_mcp_server` and
+named `mcp__<server key>__<tool>` in `allowed_tools`.
+
+**Design points.** GET only, two hard-coded public APIs, board names validated before use in a URL
+or filename. Failures return `is_error` so Claude can react instead of the run crashing.
+`certifi` supplies root certificates because python.org Python on macOS has none. Verification stays on.
+
+Tested live: Greenhouse `gitlab`, Lever `palantir` and `spotify` all returned jobs. A bad board name
+was rejected, an unknown board gave a 404, and the agent fetched 2 jobs from a plain-English request.
+
+**Quiz.**
+1. Why does the tool return `is_error` rather than raise an exception?
+2. Why is `urllib` wrapped in `asyncio.to_thread`?
+
+<details><summary>Answers</summary>
+
+1. Claude sees the failure and can respond, and the rest of the run survives.
+2. `urllib` blocks. On the event loop it would freeze everything else while waiting.
+</details>
+
+## Current state and what's next
+
+Working mode changed: Claude builds each stage and the user reviews afterwards, rather than the
+user writing the code first. The user is new to agents, so explain plainly what is happening and
+always say where files are.
+
+**Environment facts.** Project is at `~/Developer/job-agent`, never on the iCloud-synced Desktop.
+SDK 0.2.180. Test with `model="claude-sonnet-5-5"` to save Pro quota. `~/Desktop/job-agent` holds
+only an old broken venv and can be deleted by the user.
+
+**Next steps, in order.**
+1. Stage 5, `score_jobs.py`: for each `jobs/*.txt` not yet in `tracker.csv`, make one `query()` with
+   `tools=[]` and `output_format={"type": "json_schema", "schema": ...}` returning score,
+   matching_skills, missing_skills, reasoning. Put resume and posting text inline in the prompt.
+   With no tools, a malicious posting has nothing to abuse. Treat a result as valid only if
+   `subtype == "success"` and `structured_output` is present. Parse title, company and link from
+   the file header in Python, not from the model. Append to `tracker.csv` with columns job, company,
+   score, status, link, missing_skills, file. Use `file` as the dedupe key. Start status at `to_review`.
+   Check that `output_format` works with `tools=[]`.
+2. Stage 6, `draft.py`: for rows with score at or above the threshold and status `to_review`, write
+   a tailored summary and cover letter to `drafts/<job file stem>.md`, then set status to `drafted`.
+   Use only facts from the resume. Mark each file as a draft for review. Preserve manual edits to
+   the CSV and replace it atomically (temp file plus `os.replace`).
+3. Stage 7, `config.toml` read with `tomllib`, and `run.py` for one command: fetch by calling
+   `fetch_and_save` directly (no LLM needed), then score, then draft. Settings: model, min_score,
+   keywords, greenhouse and lever board lists, and a max-new-jobs-per-run limit to protect Pro quota.
+   Daily scheduling is optional: document it and don't install it without asking.
+
+**Test method.** Don't create a fake `resume.md` in the project. Copy `examples/` into a scratch
+folder and run the scripts from there, since paths are relative to the current directory.
+
+**Each stage ends with:** notes and 2 quiz questions in this file, then one git commit.
