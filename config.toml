@@ -1,9 +1,42 @@
-# Settings for the company job board search. Think of it as application.yml.
+# Your job search requirements. The agent reads this every run.
+# Think of it as application.yml: change values here, never in the instructions.
 
+[search]
+roles = ["Backend Engineer", "Python Developer", "AI Engineer", "Software Engineer"]
+# Skip jobs that ask for more experience than this range.
+experience_years_min = 0
+experience_years_max = 2
+locations = ["India (any city)", "Remote (worldwide)"]
+# Jobs abroad are kept only if they offer visa sponsorship.
+abroad_only_with_visa_sponsorship = true
+# Skip jobs whose listed salary is below this. Jobs with no salary shown are kept.
+min_salary_lpa = 5.5
+job_types = ["full-time", "contract"]
+exclude_job_types = ["internship"]
+# Company names or words in a job title to always skip.
+exclude_companies = []
+exclude_keywords = []
+
+[daily]
+jobs_per_day = 20
+# Never pad the list: jobs below this score are dropped even if fewer than 30 remain.
+min_score = 60
+# How many results to look at on each portal, to protect your Pro quota.
+max_results_per_portal = 15
+
+[portals]
+# Keys from instructions/portals.md. Remove a key to stop using that portal.
+enabled = [
+  "linkedin", "naukri", "indeed", "foundit", "instahyre", "cutshort", "hirist",
+  "wellfound", "glassdoor", "shine", "remotive", "weworkremotely", "himalayas",
+  "remoteok", "company_sites", "company_boards",
+]
+
+[company_boards]
+# Used by job_tools.py, which reads public Greenhouse and Lever boards directly.
 # A job is kept if its TITLE contains any of these. An empty list keeps every job.
-keywords = ["java","python", "backend", "spring"]
-
-# Public boards to read. The board name is the last part of the company's board
-# URL, in lower case. These three are examples: replace them with your targets.
+keywords = ["java", "python", "backend", "spring"]
+# The board name is the last part of the company's board URL, in lower case.
 greenhouse_boards = ["gitlab"]
 lever_boards = ["palantir", "spotify"]
+

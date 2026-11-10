@@ -221,6 +221,25 @@ must be on. Daily scheduling is not set up yet.
 `playground/`. The stage notes above describe those files. To see or restore them:
 `git show 7d55717:<file>`. The agent now updates `tracker.csv` directly.
 
+## Stage 9: General agent for all portals (2026-11-10)
+
+- `config.toml` now holds the user's requirements: `[search]` filters, `[daily]` target (30 jobs,
+  minimum score 60), `[portals] enabled`, `[company_boards]` for `job_tools.py`, `[google_drive]` folder.
+- `instructions/portals.md` lists how to search every portal. The URL patterns are untested and have a
+  fallback to each site's own search box.
+- `instructions/todays-work.md` is general: nothing about the user is written in it. It adds hard
+  filters, no padding below `min_score`, a detailed tailoring procedure, and one Google Sheet per day.
+- `resume_tailoring/check_resume.py` blocks new numbers, employers, titles and skills in a tailored resume.
+- Google Sheet: the user's own "Job Tracker" sheet, in their personal Google account. The Claude account belongs to
+  someone else, so its connectors can't be used. `google_sheet/Code.gs` is an Apps Script web app pasted
+  into the sheet. `google_sheet/sync.py` posts tracker.csv to it with a secret key. The link and key are in
+  `google_sheet/sheet_link.toml`, which git ignores.
+- 2026-11-11: test data deleted. Applications sent during the test are kept in
+  `past_applications.csv` (git-ignored) so they're never applied to twice. 20 jobs a day. Phase 2 runs
+  in 3 rounds: quick apply, then company forms the agent can sign in to with Google or LinkedIn, then
+  jobs needing the user (passwords, codes, CAPTCHAs, missing answers) together at the end.
+- Not done: daily scheduling.
+
 ## Current state and what's next
 
 Working mode: Claude writes the code and the user reviews it. **Claude does not commit. The user

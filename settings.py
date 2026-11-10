@@ -30,8 +30,11 @@ def load_settings() -> Settings:
     except tomllib.TOMLDecodeError as error:
         raise ValueError(f"config.toml has a syntax error: {error}") from error
 
+    boards = data.get("company_boards")
+    if not isinstance(boards, dict):
+        raise ValueError("config.toml: the [company_boards] section is missing")
     return Settings(
-        keywords=_text_list(data, "keywords"),
-        greenhouse_boards=_text_list(data, "greenhouse_boards"),
-        lever_boards=_text_list(data, "lever_boards"),
+        keywords=_text_list(boards, "keywords"),
+        greenhouse_boards=_text_list(boards, "greenhouse_boards"),
+        lever_boards=_text_list(boards, "lever_boards"),
     )

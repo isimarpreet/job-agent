@@ -128,6 +128,12 @@ def fetch_all() -> int:
                 failures += 1
                 continue
             print(f"  {source}/{board}: {len(saved)} matching job(s)")
+            # One short line per job, so the agent can pick the promising ones
+            # without reading every full posting.
+            for path in saved:
+                with path.open(encoding="utf-8") as file:
+                    title, _, location = (next(file).strip() for _ in range(3))
+                print(f"    {path.name} | {title[7:]} | {location[10:]}")
     return failures
 
 

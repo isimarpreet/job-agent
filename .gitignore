@@ -21,3 +21,15 @@ playground/
 applicant_profile.md
 tailored/
 shortlists/
+google_sheet/sheet_link.toml
+google_sheet/Code_to_paste.gs
+past_applications.csv
+
+# Local editor and tool settings
+.claude/settings.local.json
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+.tracker-*
