@@ -50,3 +50,27 @@ with success or error). `total_cost_usd` is only an estimate. Pro usage comes fr
 1. `ResultMessage`. Check `is_error` and `subtype`.
 2. It has no tools (`tools=[]`), so Claude can only answer, not act.
 </details>
+
+## Stage 2: The agent loop (done, `agent_loop.py`)
+
+**Concept.** An agent is a model plus tools plus a loop. Claude requests a tool, the SDK runs it,
+the result goes back, and Claude decides the next step. You don't write that loop.
+
+**Three separate controls.**
+- `tools`: which tools exist at all.
+- `allowed_tools`: which calls are pre-approved. It does not restrict anything on its own.
+- `permission_mode="dontAsk"`: anything not approved is refused.
+
+Tested: with `Edit(/summary.txt)` approved, a request to write `other.txt` was refused and the
+file was not created. `Edit(...)` rules also cover the Write tool. Never use `bypassPermissions`
+here, since it ignores `allowed_tools`.
+
+**Quiz.**
+1. Why do tool results arrive as a `UserMessage`?
+2. What would happen with `allowed_tools=["Read"]` but no `permission_mode`, and the agent tried Write?
+
+<details><summary>Answers</summary>
+
+1. The conversation has two sides. Anything Claude didn't produce itself is on the user side.
+2. Write isn't approved, so it goes to `default` mode's approval step. With no callback to approve it, it's denied.
+</details>
