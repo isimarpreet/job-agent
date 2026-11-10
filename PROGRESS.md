@@ -238,6 +238,9 @@ must be on. Daily scheduling is not set up yet.
   `past_applications.csv` (git-ignored) so they're never applied to twice. 20 jobs a day. Phase 2 runs
   in 3 rounds: quick apply, then company forms the agent can sign in to with Google or LinkedIn, then
   jobs needing the user (passwords, codes, CAPTCHAs, missing answers) together at the end.
+- The user has no accounts on most portals. The agent signs up itself with "Continue with Google" using
+  the user's own Google account in Chrome. Only passwords it would have to type, one-time codes
+  and CAPTCHAs go to the user, in round 3.
 - Not done: daily scheduling.
 
 ## Current state and what's next

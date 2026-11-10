@@ -30,9 +30,10 @@ ask for a choice if none is recorded, otherwise continue applying where it stopp
    describes, preferring jobs posted in the last few days. Look at no more than
    `max_results_per_portal` results per portal. Use the page text of results lists
    rather than opening every posting.
-3. If a portal is blocked by a site permission, needs a login you don't have, or fails
-   twice, note it under "Portals not searched" and move on. Never stop the run for one
-   portal.
+3. If a portal needs an account to search, sign up or sign in as described in "Signing in
+   and signing up", then search. If that isn't possible, or the portal is blocked by a site
+   permission or fails twice, note it under "Portals not searched" with the reason and move
+   on. Never stop the run for one portal.
 4. Apply the hard filters from `[search]`. Drop a job if any of these is true:
    - It asks for more years than `experience_years_max` plus 1.
    - It's in a country where the profile can't work without sponsorship, and it doesn't
@@ -129,13 +130,24 @@ Statuses: `shortlisted`, `applied`, `waiting_for_you`, `skipped`.
 
 ## Signing in and signing up
 
-- If the site is already signed in, continue.
-- If it offers "Continue with Google" or "Sign in with LinkedIn", use it. This signs in, or
-  creates the account if there isn't one. Pick the Google account whose email matches the
-  profile's email. If that account isn't offered, it's a round 3 job. Approve only what's
-  needed to sign in.
-- Never type, create or save a password, and never enter one-time codes. Jobs that need
-  them go to round 3, with the sign-up form already filled in except for those fields.
+The user doesn't have accounts on most portals. The agent creates them, using the Google
+account signed in to Chrome. Its email must match the profile's email.
+
+1. If the site is already signed in, continue.
+2. Otherwise, choose "Continue with Google", "Sign up with Google" or "Sign in with
+   LinkedIn". Pick the Google account whose email matches the profile. This signs in, or
+   creates the account if there isn't one. Approve only what's needed to sign in.
+3. If the site then asks for profile details, fill them in from the resume and profile,
+   and upload a resume PDF. Make `resume_tailoring/resume.pdf` from
+   `resume_tailoring/resume.md` with `resume_pdf.py` if it doesn't exist. Answer optional
+   marketing questions with "no" or leave them blank.
+4. If the only option is email and password, Chrome may offer "Use suggested password",
+   which creates a strong password and saves it in Chrome's password manager. Click it if
+   offered, so you never see or type the password. Otherwise leave that site for round 3.
+5. Never type, invent or save a password yourself, and never enter one-time codes from
+   email or phone. Those steps, along with a CAPTCHA, are the user's part in round 3, with
+   everything else already filled in.
+6. Keep a list of the portals you created accounts on, and report it at the end.
 
 ## Round 3, with the user
 
