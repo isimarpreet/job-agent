@@ -206,29 +206,35 @@ LinkedIn, Naukri, Indeed and company boards, India and worldwide. The user picks
 applies to only those, with a tailored resume each. It fills long forms too, and at a CAPTCHA it leaves the
 filled form open for the user to solve and submit.
 
-**Files.** `.claude/skills/todays-work/SKILL.md` is the command, `applicant_profile.md` holds form answers
-(git-ignored), and `resume_pdf.py` makes the upload PDF. Output goes to `shortlists/` and `tailored/`.
+**Files.** `instructions/todays-work.md` holds the agent's full instructions. `.claude/skills/todays-work/SKILL.md`
+is a short pointer to it, and must stay in that location for the `/todays-work` command to exist.
+`resume_tailoring/` holds `resume.md`, `resume_pdf.py`, `sample_resume.md` and `tailored/`.
+`applicant_profile.md` holds form answers (git-ignored). Shortlists go to `shortlists/`.
 
 **Depends on.** Claude in Chrome connected with `/chrome`. It runs in the user's own Chrome, so the Mac
 must be on. Daily scheduling is not set up yet.
+
+## Cleanup (2026-11-10)
+
+`/todays-work` replaced the Terminal pipeline. Removed: `hello.py`, `agent_loop.py`, `screener_v1.py`,
+`fetch_agent.py`, `run.py`, `score_jobs.py`, `draft.py`, `structured_query.py`, `tracker.py`, `examples/`,
+`playground/`. The stage notes above describe those files. To see or restore them:
+`git show 7d55717:<file>`. The agent now updates `tracker.csv` directly.
 
 ## Current state and what's next
 
 Working mode: Claude writes the code and the user reviews it. **Claude does not commit. The user
 commits in GitHub Desktop.** The user is new to agents, so explain plainly and always say where files are.
 
-**Git state.** Stages 4 and 5 are committed on branch `stages-4-to-7`. Stages 6 and 7 are written and
-uncommitted on that branch. The repo has no GitHub remote yet.
+**Git state.** Work is on branch `dev`. The user commits in GitHub Desktop.
 
 **Environment facts.** Project is at `~/Developer/job-agent`, never in an iCloud-synced folder. On this
 Mac that includes `~/Desktop` and `~/Documents`, so `~/Documents/GitHub` is not safe either. SDK 0.2.180.
 `~/Desktop/job-agent` holds only an old broken venv and can be deleted by the user.
 
-**To use it.** Put your real resume at `resume.md`, edit `config.toml`, then run `venv/bin/python run.py`.
+**To use it.** Put your resume at `resume_tailoring/resume.md`, fill in `applicant_profile.md`, turn on
+`/chrome`, then type `/todays-work` in a new Claude chat.
 
 **Next steps.** The user will list the changes they want.
-
-**Test method.** Don't create a fake `resume.md` in the project. Copy `examples/` and `config.toml` into a
-scratch folder and run the scripts from there, since paths are relative to the current directory.
 
 **Each stage ends with:** notes and 2 quiz questions in this file. The user makes the commit.

@@ -1,25 +1,25 @@
-"""Stage 4: custom tools that fetch postings from public job board APIs.
+"""Download postings from public Greenhouse and Lever boards into jobs/.
 
-Only two hard-coded public read-only APIs are ever contacted, using GET. There
-is deliberately no code here that can POST or submit anything.
+Run: python job_tools.py
 
-A @tool function is like a Spring @Bean that Claude can call: the description
-tells Claude when to use it, and the schema is its method signature.
+Reads the boards and keywords from config.toml. Only two hard-coded public
+read-only APIs are ever contacted, using GET. No AI is involved in this step.
 """
 
-import asyncio
 import html
 import json
 import re
 import ssl
-import urllib.error
+import sys
 import urllib.request
 from pathlib import Path
 from typing import Any
 
 import certifi
-from claude_agent_sdk import create_sdk_mcp_server, tool
 
+from settings import load_settings
+
+FETCH_LIMIT = 1000
 SLUG_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 
 # python.org builds of Python on macOS ship without root certificates. certifi
@@ -111,37 +111,29 @@ def fetch_and_save(source: str, board: str, keywords: list[str], limit: int) -> 
     return saved
 
 
-async def _run_fetch(source: str, args: dict[str, Any]) -> dict[str, Any]:
-    keywords = [k.strip() for k in args["keywords"].split(",")]
+def fetch_all() -> int:
+    """Fetch every board in config.toml and return how many boards failed."""
+    settings = load_settings()
+    failures = 0
+    for source, boards in (
+        ("greenhouse", settings.greenhouse_boards),
+        ("lever", settings.lever_boards),
+    ):
+        for board in boards:
+            try:
+                saved = fetch_and_save(source, board, settings.keywords, FETCH_LIMIT)
+            except (OSError, ValueError, KeyError) as error:
+                # One bad board shouldn't stop the others.
+                print(f"  FAILED {source}/{board}: {error}")
+                failures += 1
+                continue
+            print(f"  {source}/{board}: {len(saved)} matching job(s)")
+    return failures
+
+
+if __name__ == "__main__":
     try:
-        # urllib blocks, so run it on a worker thread and keep the event loop free.
-        saved = await asyncio.to_thread(
-            fetch_and_save, source, args["board"], keywords, args["limit"]
-        )
-    except (urllib.error.URLError, ValueError, KeyError, TimeoutError) as error:
-        # Returning is_error lets Claude see the failure and react, rather than
-        # the exception crashing the whole run.
-        return {"content": [{"type": "text", "text": f"Fetch failed: {error}"}], "is_error": True}
-
-    names = "\n".join(path.name for path in saved) or "(no matching jobs)"
-    return {"content": [{"type": "text", "text": f"Saved {len(saved)} jobs:\n{names}"}]}
-
-
-SCHEMA = {"board": str, "keywords": str, "limit": int}
-HELP = (
-    " Saves matching postings into the jobs folder. keywords is a comma-separated"
-    " list matched against job titles. limit is the maximum number to save."
-)
-
-
-@tool("fetch_greenhouse_jobs", "Fetch postings from a public Greenhouse board." + HELP, SCHEMA)
-async def fetch_greenhouse_jobs(args: dict[str, Any]) -> dict[str, Any]:
-    return await _run_fetch("greenhouse", args)
-
-
-@tool("fetch_lever_jobs", "Fetch postings from a public Lever board." + HELP, SCHEMA)
-async def fetch_lever_jobs(args: dict[str, Any]) -> dict[str, Any]:
-    return await _run_fetch("lever", args)
-
-
-jobs_server = create_sdk_mcp_server("jobs", tools=[fetch_greenhouse_jobs, fetch_lever_jobs])
+        failed = fetch_all()
+    except ValueError as error:
+        sys.exit(str(error))
+    sys.exit(1 if failed else 0)

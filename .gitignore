@@ -11,6 +11,7 @@ __pycache__/
 
 # Personal data: your resume, applications and generated output stay local
 resume.md
+*.pdf
 tracker.csv
 report.md
 run.log

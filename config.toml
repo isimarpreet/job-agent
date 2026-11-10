@@ -1,17 +1,7 @@
-# Settings for run.py, score_jobs.py and draft.py. Think of it as application.yml.
-
-# Which Claude model to use through your Claude Code login.
-model = "claude-sonnet-5-5"
-
-# Only jobs scoring at least this much (0 to 100) get a draft.
-min_score = 70
-
-# Claude calls allowed per run, for scoring and again for drafting. This protects
-# your Pro quota. Jobs over the limit are picked up on the next run.
-max_new_jobs_per_run = 5
+# Settings for the company job board search. Think of it as application.yml.
 
 # A job is kept if its TITLE contains any of these. An empty list keeps every job.
-keywords = ["java", "backend", "spring"]
+keywords = ["java","python", "backend", "spring"]
 
 # Public boards to read. The board name is the last part of the company's board
 # URL, in lower case. These three are examples: replace them with your targets.
