@@ -119,6 +119,33 @@ was rejected, an unknown board gave a 404, and the agent fetched 2 jobs from a p
 2. `urllib` blocks. On the event loop it would freeze everything else while waiting.
 </details>
 
+## Stage 5: Structured scoring (done, `score_jobs.py`, `structured_query.py`, `tracker.py`)
+
+**Concept.** `output_format` makes Claude return JSON that matches a schema, like binding a response
+to a DTO. Output that fails validation is rejected and retried before you ever see it.
+
+**Files.** `structured_query.py` is the one Claude call (a shared service). `tracker.py` is the only
+code that touches `tracker.csv` (a repository). `score_jobs.py` is the workflow.
+
+**Design points.** `tools=[]` with `dontAsk` works: the only tool in the session is the SDK's internal
+`StructuredOutput`. Title, company and link come from the file header in Python, and parsing stops at
+the first blank line so a posting's body can't override them. A failed job writes nothing, so the
+next run retries it. Every tracker write re-reads the file and swaps it in atomically, keeping your
+hand edits and extra columns. Text from postings that could run as an Excel formula gets a leading `'`.
+
+Tested on fictional data: Java role 88, iOS role 4, a hostile posting demanding 100 scored 3. A second
+run scored nothing. An invalid schema produced a clean failure and no tracker row. `apiKeySource: none`.
+
+**Quiz.**
+1. Why take the job title from the file header rather than asking Claude for it?
+2. Why does a scoring failure write nothing to `tracker.csv`?
+
+<details><summary>Answers</summary>
+
+1. Parsing is exact and free, and a posting can't trick Python the way it might trick a model.
+2. The file name is the dedupe key. With no row, the next run treats the job as new and retries it.
+</details>
+
 ## Current state and what's next
 
 Working mode changed: Claude builds each stage and the user reviews afterwards, rather than the
@@ -130,19 +157,11 @@ SDK 0.2.180. Test with `model="claude-sonnet-5-5"` to save Pro quota. `~/Desktop
 only an old broken venv and can be deleted by the user.
 
 **Next steps, in order.**
-1. Stage 5, `score_jobs.py`: for each `jobs/*.txt` not yet in `tracker.csv`, make one `query()` with
-   `tools=[]` and `output_format={"type": "json_schema", "schema": ...}` returning score,
-   matching_skills, missing_skills, reasoning. Put resume and posting text inline in the prompt.
-   With no tools, a malicious posting has nothing to abuse. Treat a result as valid only if
-   `subtype == "success"` and `structured_output` is present. Parse title, company and link from
-   the file header in Python, not from the model. Append to `tracker.csv` with columns job, company,
-   score, status, link, missing_skills, file. Use `file` as the dedupe key. Start status at `to_review`.
-   Check that `output_format` works with `tools=[]`.
-2. Stage 6, `draft.py`: for rows with score at or above the threshold and status `to_review`, write
+1. Stage 6, `draft.py`: for rows with score at or above the threshold and status `to_review`, write
    a tailored summary and cover letter to `drafts/<job file stem>.md`, then set status to `drafted`.
    Use only facts from the resume. Mark each file as a draft for review. Preserve manual edits to
    the CSV and replace it atomically (temp file plus `os.replace`).
-3. Stage 7, `config.toml` read with `tomllib`, and `run.py` for one command: fetch by calling
+2. Stage 7, `config.toml` read with `tomllib`, and `run.py` for one command: fetch by calling
    `fetch_and_save` directly (no LLM needed), then score, then draft. Settings: model, min_score,
    keywords, greenhouse and lever board lists, and a max-new-jobs-per-run limit to protect Pro quota.
    Daily scheduling is optional: document it and don't install it without asking.
