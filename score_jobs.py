@@ -11,9 +11,8 @@ import sys
 from pathlib import Path
 
 from structured_query import StructuredQueryError, ask_for_json
+from settings import load_settings
 from tracker import add_job, read_tracker
-
-DEFAULT_MODEL = "claude-sonnet-5-5"
 
 # Plays the role of a DTO class. Output that doesn't match is rejected and retried.
 SCORE_SCHEMA = {
@@ -68,7 +67,7 @@ def find_new_jobs(already_tracked: set[str]) -> list[Path]:
     ]
 
 
-async def score_new_jobs(model: str = DEFAULT_MODEL, limit: int | None = None) -> int:
+async def score_new_jobs(model: str, limit: int | None = None) -> int:
     """Score up to `limit` new jobs and return how many failed."""
     resume_path = Path.cwd() / "resume.md"
     if not resume_path.exists():
@@ -117,7 +116,8 @@ async def score_new_jobs(model: str = DEFAULT_MODEL, limit: int | None = None) -
 
 if __name__ == "__main__":
     try:
-        failed = asyncio.run(score_new_jobs())
+        settings = load_settings()
+        failed = asyncio.run(score_new_jobs(settings.model, settings.max_new_jobs_per_run))
     except ValueError as error:
         sys.exit(str(error))
     sys.exit(1 if failed else 0)

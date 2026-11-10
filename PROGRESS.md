@@ -146,27 +146,75 @@ run scored nothing. An invalid schema produced a clean failure and no tracker ro
 2. The file name is the dedupe key. With no row, the next run treats the job as new and retries it.
 </details>
 
+## Stage 6: Drafting (done, `draft.py`)
+
+**Concept.** Same one-call JSON pattern as Stage 5, used to write text instead of judging it. `draft.py`
+picks rows with status `to_review` and a score at or above `min_score`, then writes `drafts/<job file stem>.md`.
+
+**Design points.** The system prompt forbids anything not in the resume. Claude must also quote the
+resume lines it used, and Python checks each quote really appears in `resume.md`. A quote that isn't
+found produces a warning at the top of the draft. This is a checklist and not a proof, because it can't
+inspect every sentence of the letter, so always read the draft. An existing draft is never overwritten.
+Only `to_review` rows change to `drafted`, so a status you set by hand stays.
+
+Tested on fictional data: a posting that ordered fake Kafka and PhD claims did not get them into the
+letter. A bad score and a missing job file were reported without stopping the run.
+
+**Quiz.**
+1. Why does the temp file live in the same folder as `tracker.csv`?
+2. What can the "resume lines" check catch, and what can't it catch?
+
+<details><summary>Answers</summary>
+
+1. `os.replace` is only atomic within one filesystem, so a same-folder temp file guarantees that.
+2. It catches a quoted line that isn't in the resume. It can't catch an invented claim in the letter that has no quote.
+</details>
+
+## Stage 7: One command (done, `config.toml`, `settings.py`, `run.py`)
+
+**Concept.** `config.toml` is like `application.yml`, and `settings.py` is like a
+`@ConfigurationProperties` class that fails fast on bad values. `run.py` is the orchestrator: fetch
+with plain Python, then score, then draft.
+
+**Design points.** Fetching calls `fetch_and_save` directly because no judgement is needed, so it costs
+no quota. `max_new_jobs_per_run` applies to scoring and again to drafting. Jobs over the limit stay in
+`jobs/` and get picked up next run. One failing board doesn't stop the others. The exit code is 1 if
+anything failed.
+
+Tested live on Greenhouse `gitlab` and Lever `palantir`: 40 jobs fetched, 2 scored, 38 left waiting. An
+invalid and an unknown board failed cleanly. A broken, wrong-typed or missing config gave a clear message.
+
+**Daily scheduling (optional, NOT installed, not tested).** `crontab -e`, then:
+`0 9 * * * cd ~/Developer/job-agent && venv/bin/python run.py >> run.log 2>&1`
+Try it once by hand first, since a cron job may not reach your Claude Code login.
+
+**Quiz.**
+1. Why is the per-run limit applied to scoring rather than to fetching?
+2. Why doesn't `run.py` use an agent to decide which boards to fetch?
+
+<details><summary>Answers</summary>
+
+1. Fetching is free, and limiting it would return the same first N jobs every time. Scoring is what uses quota.
+2. The boards are fixed in config, so there's no decision to make. Plain code is cheaper and predictable.
+</details>
+
 ## Current state and what's next
 
-Working mode changed: Claude builds each stage and the user reviews afterwards, rather than the
-user writing the code first. The user is new to agents, so explain plainly what is happening and
-always say where files are.
+Working mode: Claude writes the code and the user reviews it. **Claude does not commit. The user
+commits in GitHub Desktop.** The user is new to agents, so explain plainly and always say where files are.
 
-**Environment facts.** Project is at `~/Developer/job-agent`, never on the iCloud-synced Desktop.
-SDK 0.2.180. Test with `model="claude-sonnet-5-5"` to save Pro quota. `~/Desktop/job-agent` holds
-only an old broken venv and can be deleted by the user.
+**Git state.** Stages 4 and 5 are committed on branch `stages-4-to-7`. Stages 6 and 7 are written and
+uncommitted on that branch. The repo has no GitHub remote yet.
 
-**Next steps, in order.**
-1. Stage 6, `draft.py`: for rows with score at or above the threshold and status `to_review`, write
-   a tailored summary and cover letter to `drafts/<job file stem>.md`, then set status to `drafted`.
-   Use only facts from the resume. Mark each file as a draft for review. Preserve manual edits to
-   the CSV and replace it atomically (temp file plus `os.replace`).
-2. Stage 7, `config.toml` read with `tomllib`, and `run.py` for one command: fetch by calling
-   `fetch_and_save` directly (no LLM needed), then score, then draft. Settings: model, min_score,
-   keywords, greenhouse and lever board lists, and a max-new-jobs-per-run limit to protect Pro quota.
-   Daily scheduling is optional: document it and don't install it without asking.
+**Environment facts.** Project is at `~/Developer/job-agent`, never in an iCloud-synced folder. On this
+Mac that includes `~/Desktop` and `~/Documents`, so `~/Documents/GitHub` is not safe either. SDK 0.2.180.
+`~/Desktop/job-agent` holds only an old broken venv and can be deleted by the user.
 
-**Test method.** Don't create a fake `resume.md` in the project. Copy `examples/` into a scratch
-folder and run the scripts from there, since paths are relative to the current directory.
+**To use it.** Put your real resume at `resume.md`, edit `config.toml`, then run `venv/bin/python run.py`.
 
-**Each stage ends with:** notes and 2 quiz questions in this file, then one git commit.
+**Next steps.** The user will list the changes they want.
+
+**Test method.** Don't create a fake `resume.md` in the project. Copy `examples/` and `config.toml` into a
+scratch folder and run the scripts from there, since paths are relative to the current directory.
+
+**Each stage ends with:** notes and 2 quiz questions in this file. The user makes the commit.

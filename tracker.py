@@ -60,6 +60,18 @@ def _safe_cell(value: str) -> str:
     return "'" + value if value[:1] in ("=", "+", "-", "@", "\t", "\r") else value
 
 
+def mark_drafted(file: str) -> None:
+    """Move a to_review row to drafted. Any status you set by hand is left alone.
+
+    Re-reads first, so edits made during a long run are kept.
+    """
+    columns, rows = read_tracker()
+    for row in rows:
+        if row["file"] == file and (row["status"] or "").strip() == STATUS_TO_REVIEW:
+            row["status"] = STATUS_DRAFTED
+    _write_tracker(columns, rows)
+
+
 def add_job(job: str, company: str, score: int, link: str, missing_skills: list[str], file: str) -> None:
     columns, rows = read_tracker()
     rows.append(
