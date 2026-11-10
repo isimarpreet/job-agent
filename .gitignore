@@ -1,0 +1,16 @@
+# Python environment and caches (like Maven's target/)
+venv/
+__pycache__/
+*.pyc
+
+# Secrets (this project should never need any, but never commit them)
+.env
+
+# macOS
+.DS_Store
+
+# Personal data: your resume, applications and generated output stay local
+resume.md
+tracker.csv
+report.md
+drafts/
